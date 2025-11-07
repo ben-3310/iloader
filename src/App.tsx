@@ -21,6 +21,7 @@ import { Settings } from "./pages/Settings";
 import { Pairing } from "./pages/Pairing";
 import { useStore } from "./StoreContext";
 import { getVersion } from "@tauri-apps/api/app";
+import { checkForUpdates } from "./update";
 
 function App() {
   const [operationState, setOperationState] = useState<OperationState | null>(
@@ -40,6 +41,10 @@ function App() {
       setVersion(version);
     };
     fetchVersion();
+  }, []);
+
+  useEffect(() => {
+    checkForUpdates();
   }, []);
 
   const startOperation = useCallback(
