@@ -164,13 +164,25 @@ function App() {
               onClick={() => {
                 if (!ensuredLoggedIn() || !ensureSelectedDevice()) return;
                 startOperation(installSideStoreOperation, {
-                  nightly: true,
+                  nightly: false,
                   liveContainer: true,
                   revokeCert,
                 });
               }}
             >
               Install LiveContainer+SideStore
+            </button>
+            <button
+              onClick={() => {
+                //if (!ensuredLoggedIn() || !ensureSelectedDevice()) return;
+                startOperation(installSideStoreOperation, {
+                  nightly: true,
+                  liveContainer: true,
+                  revokeCert,
+                });
+              }}
+            >
+              Install LiveContainer+SideStore (Nightly)
             </button>
             <button
               onClick={async () => {

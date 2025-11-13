@@ -85,35 +85,47 @@ pub async fn install_sidestore_operation(
     revoke_cert: bool,
 ) -> Result<(), String> {
     let op = Operation::new("install_sidestore".to_string(), &window);
-    let device = {
-        let device_guard = device_state.lock().unwrap();
-        match &*device_guard {
-            Some(d) => d.clone(),
-            None => return Err("No device selected".to_string()),
-        }
-    };
     op.start("download")?;
     // TODO: Cache & check version to avoid re-downloading
     let url = if live_container {
-        "https://github.com/LiveContainer/LiveContainer/releases/latest/download/LiveContainer+SideStore.ipa"
-    } else if nightly {
-        "https://github.com/SideStore/SideStore/releases/download/nightly/SideStore.ipa"
+        if nightly {
+            "https://github.com/LiveContainer/LiveContainer/releases/download/nightly/LiveContainer+SideStore.ipa"
+        } else {
+            "https://github.com/LiveContainer/LiveContainer/releases/latest/download/LiveContainer+SideStore.ipa"
+        }
     } else {
-        "https://github.com/SideStore/SideStore/releases/latest/download/SideStore.ipa"
+        if nightly {
+            "https://github.com/SideStore/SideStore/releases/download/nightly/SideStore.ipa"
+        } else {
+            "https://github.com/SideStore/SideStore/releases/latest/download/SideStore.ipa"
+        }
     };
     let dest = handle
         .path()
         .temp_dir()
         .map_err(|e| format!("Failed to get temp dir: {:?}", e))?
         .join(if live_container {
-            "LiveContainerSideStore.ipa"
-        } else if nightly {
-            "SideStore-Nightly.ipa"
+            if nightly {
+                "LiveContainerSideStore-Nightly.ipa"
+            } else {
+                "LiveContainerSideStore.ipa"
+            }
         } else {
-            "SideStore.ipa"
+            if nightly {
+                "SideStore-Nightly.ipa"
+            } else {
+                "SideStore.ipa"
+            }
         });
     op.fail_if_err("download", download(url, &dest).await)?;
     op.move_on("download", "install")?;
+    let device = {
+        let device_guard = device_state.lock().unwrap();
+        match &*device_guard {
+            Some(d) => d.clone(),
+            None => return op.fail("install", "No device selected".to_string()),
+        }
+    };
     op.fail_if_err(
         "install",
         sideload(
