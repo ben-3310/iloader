@@ -211,6 +211,7 @@ pub struct CertificateInfo {
     pub certificate_id: String,
     pub serial_number: String,
     pub machine_name: String,
+    pub machine_id: String,
 }
 
 #[tauri::command]
@@ -231,6 +232,7 @@ pub async fn get_certificates() -> Result<Vec<CertificateInfo>, String> {
             certificate_id: cert.certificate_id,
             serial_number: cert.serial_number,
             machine_name: cert.machine_name,
+            machine_id: cert.machine_id,
         })
         .collect())
 }

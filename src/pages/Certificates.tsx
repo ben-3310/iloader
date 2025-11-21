@@ -8,6 +8,7 @@ type Certificate = {
   certificateId: string;
   serialNumber: string;
   machineName: string;
+  machineId: string;
 };
 
 export const Certificates = () => {
@@ -67,6 +68,7 @@ export const Certificates = () => {
                   <th className="cert-item-part">Name</th>
                   <th className="cert-item-part">Serial Number</th>
                   <th className="cert-item-part">Machine Name</th>
+                  <th className="cert-item-part">Machine ID</th>
                   <th>Revoke</th>
                 </tr>
               </thead>
@@ -82,6 +84,7 @@ export const Certificates = () => {
                     <td className="cert-item-part">{cert.name}</td>
                     <td className="cert-item-part">{cert.serialNumber}</td>
                     <td className="cert-item-part">{cert.machineName}</td>
+                    <td className="cert-item-part">{cert.machineId}</td>
                     <td
                       className="cert-item-revoke"
                       onClick={() => revokeCertificate(cert.serialNumber)}

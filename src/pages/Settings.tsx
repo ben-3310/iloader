@@ -97,7 +97,7 @@ export const Settings = ({ showHeading = true }: SettingsProps) => {
     false
   );
 
-  const [revokeCert, setRevokeCert] = useStore<boolean>("revokeCert", true);
+  const [revokeCert, setRevokeCert] = useStore<boolean>("revokeCert", false);
 
   return (
     <>
