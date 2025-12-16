@@ -10,8 +10,9 @@ mod operation;
 
 use crate::{
     account::{
-        cleanup_all, delete_account, delete_app_id, get_certificates, invalidate_account,
-        list_app_ids, logged_in_as, login_email_pass, login_stored_pass, revoke_certificate,
+        cleanup_all, delete_account, delete_app_id, get_certificates, get_certificates_cached,
+        invalidate_account, list_app_ids, logged_in_as, login_email_pass, login_stored_pass,
+        revoke_certificate,
     },
     device::{list_devices, set_selected_device, DeviceInfoMutex},
     pairing::{installed_pairing_apps, place_pairing_cmd},
@@ -50,6 +51,7 @@ pub fn run() {
             set_selected_device,
             install_sidestore_operation,
             get_certificates,
+            get_certificates_cached,
             revoke_certificate,
             list_app_ids,
             delete_app_id,

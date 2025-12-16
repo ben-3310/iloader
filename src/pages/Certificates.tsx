@@ -22,10 +22,35 @@ export const Certificates = () => {
       loadingRef.current = true;
       setLoading(true);
       try {
-        let certs = await invoke<Certificate[]>("get_certificates");
+        // Используем кэшированную версию для быстрой загрузки
+        let certs = await invoke<Certificate[]>("get_certificates_cached");
+        // Валидация данных сертификатов
+        certs = certs.map(cert => ({
+          name: cert.name || "Unknown",
+          certificateId: cert.certificateId || "",
+          serialNumber: cert.serialNumber || "",
+          machineName: cert.machineName || "",
+          machineId: cert.machineId || "",
+        })).filter(cert => cert.certificateId !== "" && cert.serialNumber !== "");
+
         setCertificates(certs);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error loading certificates:", error);
+        const errorMsg = String(error);
+
+        // Специальная обработка ошибок парсинга machineId
+        if (errorMsg.includes("machineId") || errorMsg.includes("Parse") || errorMsg.includes("machineld")) {
+          const detailedError =
+            "Ошибка парсинга данных от Apple API (machineId).\n\n" +
+            "Это известная проблема, которая может возникать из-за изменений в формате API Apple.\n\n" +
+            "Возможные решения:\n" +
+            "1. Выйдите и войдите снова в приложении\n" +
+            "2. Отзовите все существующие сертификаты и создайте новые\n" +
+            "3. Проверьте наличие обновлений iloader\n" +
+            "4. Сообщите об этой проблеме разработчикам\n\n" +
+            "Техническая информация: " + errorMsg;
+          throw new Error(detailedError);
+        }
         throw error;
       } finally {
         setLoading(false);
@@ -33,9 +58,16 @@ export const Certificates = () => {
       }
     };
     toast.promise(promise, {
-      loading: "Loading certificates...",
-      success: "Certificates loaded successfully!",
-      error: (e) => "Failed to load certificates: " + e,
+      loading: "Загрузка сертификатов...",
+      success: "Сертификаты успешно загружены!",
+      error: (e) => {
+        const errorStr = String(e);
+        // Если ошибка содержит многострочное сообщение, показываем его полностью
+        if (errorStr.includes("\n")) {
+          return errorStr;
+        }
+        return "Не удалось загрузить сертификаты: " + errorStr;
+      },
     });
   }, [setCertificates]);
 
