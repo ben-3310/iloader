@@ -211,6 +211,7 @@ pub struct CertificateInfo {
     pub certificate_id: String,
     pub serial_number: String,
     pub machine_name: String,
+    #[serde(default)]
     pub machine_id: String,
 }
 
@@ -221,10 +222,27 @@ pub async fn get_certificates() -> Result<Vec<CertificateInfo>, String> {
         .get_team()
         .await
         .map_err(|e| format!("Failed to get developer team: {:?}", e))?;
-    let certificates = dev_session
+
+    // Попытка получить сертификаты с обработкой ошибок парсинга
+    let certificates = match dev_session
         .list_all_development_certs(DeveloperDeviceType::Ios, &team)
         .await
-        .map_err(|e| format!("Failed to get development certificates: {:?}", e))?;
+    {
+        Ok(certs) => certs,
+        Err(e) => {
+            let error_msg = format!("Failed to get development certificates: {:?}", e);
+            // Если ошибка связана с парсингом machineId, попробуем более детальное сообщение
+            if error_msg.contains("machineId") || error_msg.contains("Parse") {
+                return Err(format!(
+                    "Failed to parse certificates from Apple. This may be due to an API change. Error: {:?}. \
+                    Please try logging out and logging back in, or check for updates to iloader.",
+                    e
+                ));
+            }
+            return Err(error_msg);
+        }
+    };
+
     Ok(certificates
         .into_iter()
         .map(|cert| CertificateInfo {
@@ -232,7 +250,8 @@ pub async fn get_certificates() -> Result<Vec<CertificateInfo>, String> {
             certificate_id: cert.certificate_id,
             serial_number: cert.serial_number,
             machine_name: cert.machine_name,
-            machine_id: cert.machine_id,
+            // Безопасная обработка machine_id - может быть пустым или иметь неожиданный формат
+            machine_id: cert.machine_id.trim().to_string(),
         })
         .collect())
 }
@@ -277,4 +296,65 @@ pub async fn delete_app_id(app_id_id: String) -> Result<(), String> {
         .await
         .map_err(|e| format!("Failed to delete App ID: {:?}", e))?;
     Ok(())
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CleanupResult {
+    pub certificates_revoked: u32,
+    pub app_ids_deleted: u32,
+    pub errors: Vec<String>,
+}
+
+#[tauri::command]
+pub async fn cleanup_all() -> Result<CleanupResult, String> {
+    let dev_session = get_developer_session().await?;
+    let team = dev_session
+        .get_team()
+        .await
+        .map_err(|e| format!("Failed to get developer team: {:?}", e))?;
+
+    let mut result = CleanupResult {
+        certificates_revoked: 0,
+        app_ids_deleted: 0,
+        errors: Vec::new(),
+    };
+
+    // 撤销所有证书
+    let certificates = dev_session
+        .list_all_development_certs(DeveloperDeviceType::Ios, &team)
+        .await
+        .map_err(|e| format!("Failed to get certificates: {:?}", e))?;
+
+    for cert in certificates {
+        match dev_session
+            .revoke_development_cert(DeveloperDeviceType::Ios, &team, &cert.serial_number)
+            .await
+        {
+            Ok(_) => result.certificates_revoked += 1,
+            Err(e) => result
+                .errors
+                .push(format!("Failed to revoke certificate {}: {:?}", cert.name, e)),
+        }
+    }
+
+    // 删除所有 App ID
+    let app_ids_response = dev_session
+        .list_app_ids(DeveloperDeviceType::Ios, &team)
+        .await
+        .map_err(|e| format!("Failed to list App IDs: {:?}", e))?;
+
+    for app_id in app_ids_response.app_ids {
+        match dev_session
+            .delete_app_id(DeveloperDeviceType::Ios, &team, app_id.app_id_id.clone())
+            .await
+        {
+            Ok(_) => result.app_ids_deleted += 1,
+            Err(e) => result
+                .errors
+                .push(format!("Failed to delete App ID {}: {:?}", app_id.name, e)),
+        }
+    }
+
+    Ok(result)
 }

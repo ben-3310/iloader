@@ -38,11 +38,25 @@ pub async fn sideload(
     sideload_app(&provider, &dev_session, app_path.into(), config)
         .await
         .map_err(|e| {
+            let error_str = format!("{:?}", e);
             match e {
                 isideload::Error::Certificate(s) if s == "You have too many certificates!" => {
                     "You have too many certificates. Revoke one by clicking \"Certificates\" and \"Revoke\".".to_string()
                 }
-                _ => e.to_string(),
+                _ => {
+                    // Обработка ошибок парсинга machineId
+                    if error_str.contains("machineId") || error_str.contains("Parse") || error_str.contains("machineld") {
+                        "Failed to parse certificate data from Apple API (machineId parsing error). \
+                        This is a known issue that may occur due to changes in Apple's API format. \
+                        Possible solutions:\n\
+                        1. Try logging out and logging back in\n\
+                        2. Revoke all existing certificates and create new ones\n\
+                        3. Check for updates to iloader\n\
+                        4. Report this issue to the iloader developers".to_string()
+                    } else {
+                        error_str
+                    }
+                }
             }
         })?;
 

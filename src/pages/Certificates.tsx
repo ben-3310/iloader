@@ -21,10 +21,16 @@ export const Certificates = () => {
     const promise = async () => {
       loadingRef.current = true;
       setLoading(true);
-      let certs = await invoke<Certificate[]>("get_certificates");
-      setCertificates(certs);
-      setLoading(false);
-      loadingRef.current = false;
+      try {
+        let certs = await invoke<Certificate[]>("get_certificates");
+        setCertificates(certs);
+      } catch (error) {
+        console.error("Error loading certificates:", error);
+        throw error;
+      } finally {
+        setLoading(false);
+        loadingRef.current = false;
+      }
     };
     toast.promise(promise, {
       loading: "Loading certificates...",
@@ -84,7 +90,7 @@ export const Certificates = () => {
                     <td className="cert-item-part">{cert.name}</td>
                     <td className="cert-item-part">{cert.serialNumber}</td>
                     <td className="cert-item-part">{cert.machineName}</td>
-                    <td className="cert-item-part">{cert.machineId}</td>
+                    <td className="cert-item-part">{cert.machineId && cert.machineId.trim() !== "" ? cert.machineId : "—"}</td>
                     <td
                       className="cert-item-revoke"
                       onClick={() => revokeCertificate(cert.serialNumber)}

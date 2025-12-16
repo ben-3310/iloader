@@ -21,6 +21,7 @@ import { Certificates } from "./pages/Certificates";
 import { AppIds } from "./pages/AppIds";
 import { Settings } from "./pages/Settings";
 import { Pairing } from "./pages/Pairing";
+import { Cleanup } from "./pages/Cleanup";
 import { getVersion } from "@tauri-apps/api/app";
 import { checkForUpdates } from "./update";
 import logo from "./iloader.svg";
@@ -33,7 +34,7 @@ function App() {
   const [loggedInAs, setLoggedInAs] = useState<string | null>(null);
   const [selectedDevice, setSelectedDevice] = useState<DeviceInfo | null>(null);
   const [openModal, setOpenModal] = useState<
-    null | "certificates" | "appids" | "pairing"
+    null | "certificates" | "appids" | "pairing" | "cleanup"
   >(null);
   const [version, setVersion] = useState<string>("");
   const [platform, setPlatform] = useState<"mac" | "windows" | "linux">(
@@ -258,6 +259,17 @@ function App() {
                   {shortcutLabel("⌘⇧A", "Ctrl+Shift+A")}
                 </span>
               </button>
+              <button
+                className="workspace-list-item"
+                style={{ color: "#ff6b6b" }}
+                onClick={() => {
+                  if (!ensuredLoggedIn()) return;
+                  setOpenModal("cleanup");
+                }}
+              >
+                Очистить все данные{" "}
+                <span aria-hidden="true">⚠️</span>
+              </button>
             </div>
           </section>
         </aside>
@@ -380,6 +392,9 @@ function App() {
       </Modal>
       <Modal isOpen={openModal === "pairing"} close={() => setOpenModal(null)}>
         <Pairing />
+      </Modal>
+      <Modal isOpen={openModal === "cleanup"} close={() => setOpenModal(null)}>
+        <Cleanup />
       </Modal>
     </main>
   );

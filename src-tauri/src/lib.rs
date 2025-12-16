@@ -10,17 +10,25 @@ mod operation;
 
 use crate::{
     account::{
-        delete_account, delete_app_id, get_certificates, invalidate_account, list_app_ids,
-        logged_in_as, login_email_pass, login_stored_pass, revoke_certificate,
+        cleanup_all, delete_account, delete_app_id, get_certificates, invalidate_account,
+        list_app_ids, logged_in_as, login_email_pass, login_stored_pass, revoke_certificate,
     },
     device::{list_devices, set_selected_device, DeviceInfoMutex},
     pairing::{installed_pairing_apps, place_pairing_cmd},
     sideload::{install_sidestore_operation, sideload_operation},
 };
 use tauri::Manager;
+use env_logger::Env;
+use std::sync::Once;
+
+static INIT_LOGGER: Once = Once::new();
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    INIT_LOGGER.call_once(|| {
+        let _ = env_logger::Builder::from_env(Env::default().default_filter_or("info")).try_init();
+    });
+
     tauri::Builder::default()
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -45,6 +53,7 @@ pub fn run() {
             revoke_certificate,
             list_app_ids,
             delete_app_id,
+            cleanup_all,
             installed_pairing_apps,
             place_pairing_cmd,
         ])
