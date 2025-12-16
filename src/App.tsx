@@ -1,31 +1,31 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import "./App.css";
-import { AppleID } from "./AppleID";
-import { Device, DeviceInfo } from "./Device";
+import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import "./App.css";
+import { AppleID } from "./AppleID";
+import { GlassCard } from "./components/GlassCard";
+import { Modal } from "./components/Modal";
 import {
-  sideloadOperation,
-  installSideStoreOperation,
   installLiveContainerOperation,
+  installSideStoreOperation,
   Operation,
   OperationState,
   OperationUpdate,
+  sideloadOperation,
 } from "./components/operations";
-import { listen } from "@tauri-apps/api/event";
 import OperationView from "./components/OperationView";
-import { toast } from "sonner";
-import { Modal } from "./components/Modal";
-import { Certificates } from "./pages/Certificates";
-import { AppIds } from "./pages/AppIds";
-import { Settings } from "./pages/Settings";
-import { Pairing } from "./pages/Pairing";
-import { Cleanup } from "./pages/Cleanup";
-import { getVersion } from "@tauri-apps/api/app";
-import { checkForUpdates } from "./update";
+import { Device, DeviceInfo } from "./Device";
 import logo from "./iloader.svg";
-import { GlassCard } from "./components/GlassCard";
+import { AppIds } from "./pages/AppIds";
+import { Certificates } from "./pages/Certificates";
+import { Cleanup } from "./pages/Cleanup";
+import { Pairing } from "./pages/Pairing";
+import { Settings } from "./pages/Settings";
+import { checkForUpdates } from "./update";
 
 function App() {
   const [operationState, setOperationState] = useState<OperationState | null>(
@@ -267,8 +267,7 @@ function App() {
                   setOpenModal("cleanup");
                 }}
               >
-                Очистить все данные{" "}
-                <span aria-hidden="true">⚠️</span>
+                Очистить все данные <span aria-hidden="true">⚠️</span>
               </button>
             </div>
           </section>
